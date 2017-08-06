@@ -122,15 +122,16 @@ public final class RestServer extends NanoHTTPD {
             if (methodInfo != null) {
                 //Получаем тип ответа
                 String produces = methodInfo.getProduces();
-                if (produces != null) {
+                if (produces != null)
                     responseInfo.setMimeType(produces);
-                }
 
                 //Если ждем объект
                 Object paramObject = null;
-                Class paramClass = methodInfo.getParamClass();
-                if (paramClass != null && requestInfo.isBodyAvailable()) {
-                    paramObject = converter.writeValue(requestInfo.getBody(), paramClass);
+                if (converter != null) {
+                    Class paramClass = methodInfo.getParamClass();
+                    if (paramClass != null && requestInfo.isBodyAvailable()) {
+                        paramObject = converter.writeValue(requestInfo.getBody(), paramClass);
+                    }
                 }
 
                 //Если мы ничего не возвращаем
@@ -139,7 +140,8 @@ public final class RestServer extends NanoHTTPD {
                 } else {
                     //Отдаем ответ
                     Object result = methodInfo.invoke(requestInfo, responseInfo, paramObject);
-                    responseInfo.setData(converter.writeValueAsBytes(result));
+                    if (converter != null)
+                        responseInfo.setData(converter.writeValueAsBytes(result));
                 }
 
                 //Отправляем ответ
@@ -150,9 +152,8 @@ public final class RestServer extends NanoHTTPD {
             if (methodInfo != null) {
                 //Получаем тип ответа
                 String produces = methodInfo.getProduces();
-                if (produces != null) {
+                if (produces != null)
                     responseInfo.setMimeType(produces);
-                }
 
                 try {
                     methodInfo.invoke(throwable, responseInfo);
