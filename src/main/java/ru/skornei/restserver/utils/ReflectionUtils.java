@@ -1,0 +1,87 @@
+package ru.skornei.restserver.utils;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+import ru.skornei.restserver.annotations.Produces;
+import ru.skornei.restserver.server.protocol.RequestInfo;
+import ru.skornei.restserver.server.protocol.ResponseInfo;
+
+public class ReflectionUtils {
+
+    private ReflectionUtils() {
+        throw new RuntimeException();
+    }
+
+    /**
+     * Информация о методе
+     */
+    public static class MethodInfo {
+
+        private Object object;
+        private Method method;
+
+        public MethodInfo(Object object, Method method) {
+            this.object = object;
+            this.method = method;
+        }
+
+        public String getProduces() {
+            Annotation annotation = method.getAnnotation(Produces.class);
+            if (annotation != null)
+                return ((Produces) annotation).value();
+
+            return null;
+        }
+
+        public Class getParamClass() {
+            for (Class cls : method.getParameterTypes()) {
+                if (!ResponseInfo.class.equals(cls) && !RequestInfo.class.equals(cls))
+                    return cls;
+            }
+
+            return null;
+        }
+
+        public boolean isVoidResult() {
+            return method.getReturnType().equals(Void.TYPE);
+        }
+
+        public Object invoke(Object... params) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+            List<Object> newParams = new ArrayList<>();
+
+            //Сортируем в порядке указаных параметров
+            for (Class cls : method.getParameterTypes()) {
+                for (Object param : params) {
+                    if (cls.isInstance(param)) {
+                        newParams.add(param);
+                        break;
+                    }
+                }
+            }
+
+            return method.invoke(object, newParams.toArray());
+        }
+    }
+
+    /**
+     * Получаем метод с нужной аннотацией
+     * @param object объект
+     * @param annotationClass аннотация
+     * @return метод
+     */
+    public static MethodInfo getDeclaredMethodInfo(Object object, Class annotationClass) {
+        Method[] methods = object.getClass().getMethods();
+
+        for (Method method : methods) {
+            Annotation annotation = method.getAnnotation(annotationClass);
+            if (annotation != null)
+                return new MethodInfo(object, method);
+        }
+
+        return null;
+    }
+}
