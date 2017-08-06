@@ -1,7 +1,7 @@
 Android Rest Server
 ========
 
-Content Provider mapper for Android by Quick Resto, LLC.
+Rest Server for Android.
 
 ## Download
 
