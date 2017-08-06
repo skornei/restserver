@@ -70,16 +70,22 @@ public class ReflectionUtils {
     /**
      * Получаем метод с нужной аннотацией
      * @param object объект
+     * @param type класс
      * @param annotationClass аннотация
      * @return метод
      */
-    public static MethodInfo getDeclaredMethodInfo(Object object, Class annotationClass) {
-        Method[] methods = object.getClass().getMethods();
+    public static MethodInfo getDeclaredMethodInfo(Object object, Class<?> type, Class annotationClass) {
+        Method[] methods = type.getMethods();
 
         for (Method method : methods) {
             Annotation annotation = method.getAnnotation(annotationClass);
             if (annotation != null)
                 return new MethodInfo(object, method);
+        }
+
+        Class<?> parentType = type.getSuperclass();
+        if (parentType != null) {
+            return getDeclaredMethodInfo(object, parentType, annotationClass);
         }
 
         return null;

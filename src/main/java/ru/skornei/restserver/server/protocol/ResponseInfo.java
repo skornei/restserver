@@ -3,41 +3,61 @@ package ru.skornei.restserver.server.protocol;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import fi.iki.elonen.NanoHTTPD;
 import ru.skornei.restserver.server.dictionary.ResponseStatus;
 import ru.skornei.restserver.server.dictionary.ResponseType;
 
-public class ResponseInfo extends NanoHTTPD.Response {
+public class ResponseInfo {
 
     /**
-     * Ответ по умолчанию
+     * Статус
      */
-    public ResponseInfo() {
-        super(ResponseStatus.OK,
-                ResponseType.TEXT_PLAIN,
-                null,
-                0);
+    private ResponseStatus status = ResponseStatus.OK;
+
+    /**
+     * Тип
+     */
+    private String type = ResponseType.TEXT_PLAIN;
+
+    /**
+     * Тело запроса
+     */
+    private byte[] body;
+
+    public ResponseStatus getStatus() {
+        return status;
     }
 
-    /**
-     * Задать тело ответа
-     * @param data строка
-     */
-    public void setData(String data) {
-        if (data != null) {
-            InputStream inputStream = new ByteArrayInputStream(data.getBytes());
-            setData(inputStream);
-        }
+    public void setStatus(ResponseStatus status) {
+        this.status = status;
     }
 
-    /**
-     * Задать тело ответа
-     * @param data данные
-     */
-    public void setData(byte[] data) {
-        if (data != null) {
-            InputStream inputStream = new ByteArrayInputStream(data);
-            setData(inputStream);
-        }
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public byte[] getBody() {
+        return body;
+    }
+
+    public void setBody(byte[] body) {
+        this.body = body;
+    }
+
+    public InputStream getBodyInputStream() {
+        if (body != null)
+            return new ByteArrayInputStream(body);
+
+        return null;
+    }
+
+    public int getBodyLength() {
+        if (body != null)
+            return body.length;
+
+        return 0;
     }
 }

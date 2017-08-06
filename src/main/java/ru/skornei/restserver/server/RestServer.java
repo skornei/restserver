@@ -11,6 +11,7 @@ import ru.skornei.restserver.annotations.methods.GET;
 import ru.skornei.restserver.annotations.methods.POST;
 import ru.skornei.restserver.annotations.methods.PUT;
 import ru.skornei.restserver.server.converter.BaseConverter;
+import ru.skornei.restserver.server.dictionary.HeaderType;
 import ru.skornei.restserver.server.dictionary.ResponseStatus;
 import ru.skornei.restserver.server.dictionary.ResponseType;
 import ru.skornei.restserver.server.protocol.RequestInfo;
@@ -96,9 +97,8 @@ public final class RestServer extends NanoHTTPD {
 
         try {
             //Читаем боди
-            String contentLengthStr = session.getHeaders().get("content-length");
-            if (contentLengthStr != null) {
-                Integer contentLength = Integer.valueOf(contentLengthStr);
+            if (session.getHeaders().containsKey(HeaderType.CONTENT_LENGTH)) {
+                Integer contentLength = Integer.valueOf(session.getHeaders().get(HeaderType.CONTENT_LENGTH));
                 if (contentLength > 0) {
                     byte[] buffer = new byte[contentLength];
                     session.getInputStream().read(buffer, 0, contentLength);
@@ -109,20 +109,20 @@ public final class RestServer extends NanoHTTPD {
             //Получаем метод
             ReflectionUtils.MethodInfo methodInfo = null;
             if (session.getMethod() == Method.GET)
-                methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, GET.class);
+                methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, GET.class);
             else if (session.getMethod() == Method.POST)
-                methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, POST.class);
+                methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, POST.class);
             else if (session.getMethod() == Method.PUT)
-                methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, PUT.class);
+                methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, PUT.class);
             else if (session.getMethod() == Method.DELETE)
-                methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, DELETE.class);
+                methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, DELETE.class);
 
             //Если метод нашли
             if (methodInfo != null) {
                 //Получаем тип ответа
                 String produces = methodInfo.getProduces();
                 if (produces != null)
-                    responseInfo.setMimeType(produces);
+                    responseInfo.setType(produces);
 
                 //Если ждем объект
                 Object paramObject = null;
@@ -140,23 +140,26 @@ public final class RestServer extends NanoHTTPD {
                     //Отдаем ответ
                     Object result = methodInfo.invoke(requestInfo, responseInfo, paramObject);
                     if (converter != null)
-                        responseInfo.setData(converter.writeValueAsBytes(result));
+                        responseInfo.setBody(converter.writeValueAsBytes(result));
                 }
 
                 //Отправляем ответ
-                return responseInfo;
+                return newFixedLengthResponse(responseInfo.getStatus(),
+                        responseInfo.getType(),
+                        responseInfo.getBodyInputStream(),
+                        responseInfo.getBodyLength());
             }
         } catch (Throwable throwable) {
             //Возвращаем ошибку 500 на случай если не настроено иное в ExceptionHandler
             responseInfo.setStatus(ResponseStatus.INTERNAL_SERVER_ERROR);
 
             //Получаем метод
-            ReflectionUtils.MethodInfo methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, ExceptionHandler.class);
+            ReflectionUtils.MethodInfo methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, ExceptionHandler.class);
             if (methodInfo != null) {
                 //Получаем тип ответа
                 String produces = methodInfo.getProduces();
                 if (produces != null)
-                    responseInfo.setMimeType(produces);
+                    responseInfo.setType(produces);
 
                 try {
                     methodInfo.invoke(throwable, responseInfo);
@@ -165,7 +168,11 @@ public final class RestServer extends NanoHTTPD {
                 }
             }
 
-            return responseInfo;
+            //Отправляем ответ
+            return newFixedLengthResponse(responseInfo.getStatus(),
+                    responseInfo.getType(),
+                    responseInfo.getBodyInputStream(),
+                    responseInfo.getBodyLength());
         }
 
         //Отвечаем 404
