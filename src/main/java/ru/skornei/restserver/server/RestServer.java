@@ -75,7 +75,6 @@ public final class RestServer extends NanoHTTPD {
      */
     @Override
     public Response serve(IHTTPSession session) {
-
         //Информация о запросе
         RequestInfo requestInfo = new RequestInfo(session.getRemoteIpAddress(),
                 session.getHeaders(),
@@ -148,6 +147,10 @@ public final class RestServer extends NanoHTTPD {
                 return responseInfo;
             }
         } catch (Throwable throwable) {
+            //Возвращаем ошибку 500 на случай если не настроено иное в ExceptionHandler
+            responseInfo.setStatus(ResponseStatus.INTERNAL_SERVER_ERROR);
+
+            //Получаем метод
             ReflectionUtils.MethodInfo methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, ExceptionHandler.class);
             if (methodInfo != null) {
                 //Получаем тип ответа
