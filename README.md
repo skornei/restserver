@@ -22,7 +22,7 @@ compile 'com.github.skornei:restserver:1.0.1+'
 
 [Apache Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
 
-    Copyright (C) 2017 Quick Resto
+    Copyright (C) 2017 Sergei Kornei
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
