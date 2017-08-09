@@ -97,7 +97,7 @@ public abstract class BaseRestServer {
     }
 
     /**
-     * Http сервер
+     * Http server
      */
     private class HttpServer extends NanoHTTPD {
 
@@ -113,18 +113,18 @@ public abstract class BaseRestServer {
          */
         @Override
         public Response serve(IHTTPSession session) {
-            //Информация о запросе
+            //Request information
             RequestInfo requestInfo = new RequestInfo(session.getRemoteIpAddress(),
                     session.getHeaders(),
                     session.getParameters());
 
-            //Информация о ответе
+            //Reply Information
             ResponseInfo responseInfo = new ResponseInfo();
 
-            //Получаем контроллер
+            //Get the controller
             Class cls = getController(session.getUri());
 
-            //Создаем контроллер
+            //Create a controller
             Object controller = null;
             try {
                 controller = cls.newInstance();
@@ -133,7 +133,7 @@ public abstract class BaseRestServer {
             }
 
             try {
-                //Читаем боди
+                //Read body
                 if (session.getHeaders().containsKey(HeaderType.CONTENT_LENGTH)) {
                     Integer contentLength = Integer.valueOf(session.getHeaders().get(HeaderType.CONTENT_LENGTH));
                     if (contentLength > 0) {
@@ -143,7 +143,7 @@ public abstract class BaseRestServer {
                     }
                 }
 
-                //Получаем метод
+                //Get the method
                 ReflectionUtils.MethodInfo methodInfo = null;
                 if (session.getMethod() == Method.GET)
                     methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, GET.class);
@@ -154,14 +154,14 @@ public abstract class BaseRestServer {
                 else if (session.getMethod() == Method.DELETE)
                     methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, DELETE.class);
 
-                //Если метод нашли
+                //If the method is found
                 if (methodInfo != null) {
-                    //Получаем тип ответа
+                    //Get the response type
                     String produces = methodInfo.getProduces();
                     if (produces != null)
                         responseInfo.setType(produces);
 
-                    //Если ждем объект
+                    //If we are waiting for an object
                     Object paramObject = null;
                     if (converter != null) {
                         Class paramClass = methodInfo.getParamClass();
@@ -170,30 +170,30 @@ public abstract class BaseRestServer {
                         }
                     }
 
-                    //Если мы ничего не возвращаем
+                    //If we do not return anything
                     if (methodInfo.isVoidResult()) {
                         methodInfo.invoke(requestInfo, responseInfo, paramObject);
                     } else {
-                        //Отдаем ответ
+                        //Return the answer
                         Object result = methodInfo.invoke(requestInfo, responseInfo, paramObject);
                         if (converter != null)
                             responseInfo.setBody(converter.writeValueAsBytes(result));
                     }
 
-                    //Отправляем ответ
+                    //Sending response
                     return newFixedLengthResponse(responseInfo.getStatus(),
                             responseInfo.getType(),
                             responseInfo.getBodyInputStream(),
                             responseInfo.getBodyLength());
                 }
             } catch (Throwable throwable) {
-                //Возвращаем ошибку 500 на случай если не настроено иное в ExceptionHandler
+                //Return error 500 in case it is not otherwise configured in ExceptionHandler
                 responseInfo.setStatus(ResponseStatus.INTERNAL_SERVER_ERROR);
 
-                //Получаем метод
+                //Get the method
                 ReflectionUtils.MethodInfo methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, ExceptionHandler.class);
                 if (methodInfo != null) {
-                    //Получаем тип ответа
+                    //Get the response type
                     String produces = methodInfo.getProduces();
                     if (produces != null)
                         responseInfo.setType(produces);
@@ -205,14 +205,14 @@ public abstract class BaseRestServer {
                     }
                 }
 
-                //Отправляем ответ
+                //Sending response
                 return newFixedLengthResponse(responseInfo.getStatus(),
                         responseInfo.getType(),
                         responseInfo.getBodyInputStream(),
                         responseInfo.getBodyLength());
             }
 
-            //Отвечаем 404
+            //Answer 404
             return newFixedLengthResponse(ResponseStatus.NOT_FOUND, ResponseType.TEXT_PLAIN, ResponseStatus.NOT_FOUND.getDescription());
         }
     }

@@ -17,7 +17,7 @@ public class ReflectionUtils {
     }
 
     /**
-     * Информация о методе
+     * Information about the method
      */
     public static class MethodInfo {
 
