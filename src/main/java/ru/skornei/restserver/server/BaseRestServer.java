@@ -45,7 +45,8 @@ public abstract class BaseRestServer {
         RestServer restServer = getClass().getAnnotation(RestServer.class);
         if (restServer != null) {
             //Создаем конвертер
-            if (BaseConverter.class.isAssignableFrom(restServer.converter())) {
+            if (!restServer.converter().equals(void.class) &&
+                    BaseConverter.class.isAssignableFrom(restServer.converter())) {
                 try {
                     this.converter = (BaseConverter) restServer.converter().newInstance();
                 } catch (Throwable throwable) {
@@ -64,7 +65,7 @@ public abstract class BaseRestServer {
             //Создаем сервер
             httpServer = new HttpServer(restServer.port());
         } else {
-            throw new NoAnnotationException(getClass().getSimpleName());
+            throw new NoAnnotationException(getClass().getSimpleName(), RestServer.class.getSimpleName());
         }
     }
 

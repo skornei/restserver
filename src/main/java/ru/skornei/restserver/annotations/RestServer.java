@@ -19,7 +19,7 @@ public @interface RestServer {
      * Конвертер объектов
      * @return класс конвертера
      */
-    Class<?> converter();
+    Class<?> converter() default void.class;
 
     /**
      * Контроллеры сервера
