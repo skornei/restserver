@@ -123,61 +123,87 @@ public abstract class BaseRestServer {
 
             //Get the controller
             Class cls = getController(session.getUri());
-
-            //Create a controller
-            Object controller = null;
-            try {
-                controller = cls.newInstance();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            try {
-                //Read body
-                if (session.getHeaders().containsKey(HeaderType.CONTENT_LENGTH)) {
-                    Integer contentLength = Integer.valueOf(session.getHeaders().get(HeaderType.CONTENT_LENGTH));
-                    if (contentLength > 0) {
-                        byte[] buffer = new byte[contentLength];
-                        session.getInputStream().read(buffer, 0, contentLength);
-                        requestInfo.setBody(buffer);
-                    }
+            
+            if (cls != null) {
+                //Create a controller
+                Object controller = null;
+                try {
+                    controller = cls.newInstance();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
 
-                //Get the method
-                ReflectionUtils.MethodInfo methodInfo = null;
-                if (session.getMethod() == Method.GET)
-                    methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, GET.class);
-                else if (session.getMethod() == Method.POST)
-                    methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, POST.class);
-                else if (session.getMethod() == Method.PUT)
-                    methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, PUT.class);
-                else if (session.getMethod() == Method.DELETE)
-                    methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, DELETE.class);
-
-                //If the method is found
-                if (methodInfo != null) {
-                    //Get the response type
-                    String produces = methodInfo.getProduces();
-                    if (produces != null)
-                        responseInfo.setType(produces);
-
-                    //If we are waiting for an object
-                    Object paramObject = null;
-                    if (converter != null) {
-                        Class paramClass = methodInfo.getParamClass();
-                        if (paramClass != null && requestInfo.isBodyAvailable()) {
-                            paramObject = converter.writeValue(requestInfo.getBody(), paramClass);
+                try {
+                    //Read body
+                    if (session.getHeaders().containsKey(HeaderType.CONTENT_LENGTH)) {
+                        Integer contentLength = Integer.valueOf(session.getHeaders().get(HeaderType.CONTENT_LENGTH));
+                        if (contentLength > 0) {
+                            byte[] buffer = new byte[contentLength];
+                            session.getInputStream().read(buffer, 0, contentLength);
+                            requestInfo.setBody(buffer);
                         }
                     }
 
-                    //If we do not return anything
-                    if (methodInfo.isVoidResult()) {
-                        methodInfo.invoke(requestInfo, responseInfo, paramObject);
-                    } else {
-                        //Return the answer
-                        Object result = methodInfo.invoke(requestInfo, responseInfo, paramObject);
-                        if (converter != null)
-                            responseInfo.setBody(converter.writeValueAsBytes(result));
+                    //Get the method
+                    ReflectionUtils.MethodInfo methodInfo = null;
+                    if (session.getMethod() == Method.GET)
+                        methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, GET.class);
+                    else if (session.getMethod() == Method.POST)
+                        methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, POST.class);
+                    else if (session.getMethod() == Method.PUT)
+                        methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, PUT.class);
+                    else if (session.getMethod() == Method.DELETE)
+                        methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, DELETE.class);
+
+                    //If the method is found
+                    if (methodInfo != null) {
+                        //Get the response type
+                        String produces = methodInfo.getProduces();
+                        if (produces != null)
+                            responseInfo.setType(produces);
+
+                        //If we are waiting for an object
+                        Object paramObject = null;
+                        if (converter != null) {
+                            Class paramClass = methodInfo.getParamClass();
+                            if (paramClass != null && requestInfo.isBodyAvailable()) {
+                                paramObject = converter.writeValue(requestInfo.getBody(), paramClass);
+                            }
+                        }
+
+                        //If we do not return anything
+                        if (methodInfo.isVoidResult()) {
+                            methodInfo.invoke(requestInfo, responseInfo, paramObject);
+                        } else {
+                            //Return the answer
+                            Object result = methodInfo.invoke(requestInfo, responseInfo, paramObject);
+                            if (converter != null)
+                                responseInfo.setBody(converter.writeValueAsBytes(result));
+                        }
+
+                        //Sending response
+                        return newFixedLengthResponse(responseInfo.getStatus(),
+                                responseInfo.getType(),
+                                responseInfo.getBodyInputStream(),
+                                responseInfo.getBodyLength());
+                    }
+                } catch (Throwable throwable) {
+                    //Return error 500 in case it is not otherwise configured in ExceptionHandler
+                    responseInfo.setStatus(ResponseStatus.INTERNAL_SERVER_ERROR);
+
+                    //Get the method
+                    ReflectionUtils.MethodInfo methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, ExceptionHandler.class);
+                    if (methodInfo != null) {
+                        //Get the response type
+                        String produces = methodInfo.getProduces();
+                        if (produces != null)
+                            responseInfo.setType(produces);
+
+                        try {
+                            methodInfo.invoke(throwable, responseInfo);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
 
                     //Sending response
@@ -185,31 +211,7 @@ public abstract class BaseRestServer {
                             responseInfo.getType(),
                             responseInfo.getBodyInputStream(),
                             responseInfo.getBodyLength());
-                }
-            } catch (Throwable throwable) {
-                //Return error 500 in case it is not otherwise configured in ExceptionHandler
-                responseInfo.setStatus(ResponseStatus.INTERNAL_SERVER_ERROR);
-
-                //Get the method
-                ReflectionUtils.MethodInfo methodInfo = ReflectionUtils.getDeclaredMethodInfo(controller, cls, ExceptionHandler.class);
-                if (methodInfo != null) {
-                    //Get the response type
-                    String produces = methodInfo.getProduces();
-                    if (produces != null)
-                        responseInfo.setType(produces);
-
-                    try {
-                        methodInfo.invoke(throwable, responseInfo);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                //Sending response
-                return newFixedLengthResponse(responseInfo.getStatus(),
-                        responseInfo.getType(),
-                        responseInfo.getBodyInputStream(),
-                        responseInfo.getBodyLength());
+                }    
             }
 
             //Answer 404
