@@ -12,7 +12,7 @@ repositories {
     maven { url "https://jitpack.io" }
 }
 
-compile 'com.github.skornei:restserver:1.0.1+'
+compile 'com.github.skornei:restserver:1.0.2+'
 ```
 
 ## Documentation
