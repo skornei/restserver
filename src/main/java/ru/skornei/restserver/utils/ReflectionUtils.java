@@ -1,5 +1,7 @@
 package ru.skornei.restserver.utils;
 
+import android.content.Context;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,7 +41,9 @@ public class ReflectionUtils {
 
         public Class getParamClass() {
             for (Class cls : method.getParameterTypes()) {
-                if (!ResponseInfo.class.equals(cls) && !RequestInfo.class.equals(cls))
+                if (!Context.class.equals(cls) &&
+                        !ResponseInfo.class.equals(cls) &&
+                        !RequestInfo.class.equals(cls))
                     return cls;
             }
 

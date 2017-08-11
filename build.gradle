@@ -1,7 +1,14 @@
-apply plugin: 'java'
+apply plugin: 'com.android.library'
 
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
+android {
+    compileSdkVersion 26
+    buildToolsVersion "26.0.0"
+
+    defaultConfig {
+        minSdkVersion 9
+        targetSdkVersion 26
+    }
+}
 
 dependencies {
     //JUnit 4

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
+import ru.skornei.restserver.Cache;
 import ru.skornei.restserver.annotations.ExceptionHandler;
 import ru.skornei.restserver.annotations.RestController;
 import ru.skornei.restserver.annotations.RestServer;
@@ -123,7 +124,8 @@ public abstract class BaseRestServer {
 
             //Get the controller
             Class cls = getController(session.getUri());
-            
+
+            //Found the controller
             if (cls != null) {
                 //Create a controller
                 Object controller = null;
@@ -173,10 +175,17 @@ public abstract class BaseRestServer {
 
                         //If we do not return anything
                         if (methodInfo.isVoidResult()) {
-                            methodInfo.invoke(requestInfo, responseInfo, paramObject);
+                            methodInfo.invoke(Cache.getContext(),
+                                    requestInfo,
+                                    responseInfo,
+                                    paramObject);
                         } else {
                             //Return the answer
-                            Object result = methodInfo.invoke(requestInfo, responseInfo, paramObject);
+                            Object result = methodInfo.invoke(Cache.getContext(),
+                                    requestInfo,
+                                    responseInfo,
+                                    paramObject);
+
                             if (converter != null)
                                 responseInfo.setBody(converter.writeValueAsBytes(result));
                         }
