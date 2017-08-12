@@ -3,8 +3,8 @@ package ru.skornei.restserver.server.protocol;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+import ru.skornei.restserver.server.dictionary.ContentType;
 import ru.skornei.restserver.server.dictionary.ResponseStatus;
-import ru.skornei.restserver.server.dictionary.ResponseType;
 
 public class ResponseInfo {
 
@@ -16,7 +16,7 @@ public class ResponseInfo {
     /**
      * Тип
      */
-    private String type = ResponseType.TEXT_PLAIN;
+    private String type = ContentType.TEXT_PLAIN;
 
     /**
      * Тело запроса

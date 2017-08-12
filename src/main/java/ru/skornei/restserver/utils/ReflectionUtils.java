@@ -8,7 +8,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import ru.skornei.restserver.annotations.Accept;
 import ru.skornei.restserver.annotations.Produces;
+import ru.skornei.restserver.annotations.RequiresAuthentication;
 import ru.skornei.restserver.server.protocol.RequestInfo;
 import ru.skornei.restserver.server.protocol.ResponseInfo;
 
@@ -39,6 +41,14 @@ public class ReflectionUtils {
             return null;
         }
 
+        public String getAccept() {
+            Annotation annotation = method.getAnnotation(Accept.class);
+            if (annotation != null)
+                return ((Accept) annotation).value();
+
+            return null;
+        }
+
         public Class getParamClass() {
             for (Class cls : method.getParameterTypes()) {
                 if (!Context.class.equals(cls) &&
@@ -52,6 +62,14 @@ public class ReflectionUtils {
 
         public boolean isVoidResult() {
             return method.getReturnType().equals(Void.TYPE);
+        }
+
+        public boolean isRequiresAuthentication() {
+            Annotation annotation = method.getAnnotation(RequiresAuthentication.class);
+            if (annotation != null)
+                return true;
+
+            return false;
         }
 
         public Object invoke(Object... params) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {

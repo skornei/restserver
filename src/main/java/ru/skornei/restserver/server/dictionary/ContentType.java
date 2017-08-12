@@ -1,6 +1,6 @@
 package ru.skornei.restserver.server.dictionary;
 
-public interface ResponseType {
+public interface ContentType {
 
     String ALL = "*/*";
     String APPLICATION_ATOM_XML = "application/atom+xml";

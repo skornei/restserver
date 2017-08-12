@@ -22,6 +22,12 @@ public @interface RestServer {
     Class<?> converter() default void.class;
 
     /**
+     * Аунтификатор
+     * @return класс аунтификатор
+     */
+    Class<?> authentication() default void.class;
+
+    /**
      * Контроллеры сервера
      * @return список классов
      */
